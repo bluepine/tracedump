@@ -1,0 +1,2 @@
+BUILDING: build the project using ant or eclipse
+RUN: do java -cp bin/ song.androidstudy.tracedump for help
