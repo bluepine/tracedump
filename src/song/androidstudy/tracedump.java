@@ -177,6 +177,7 @@ public class tracedump {
 		Long endtime, startTime;
 		int i;
 		boolean contextSwitch;
+		boolean ignore = false;
 		// TODO Auto-generated method stub
 		threadStackMap = new HashMap<Integer, Stack<StackFrame>>(mTda.length);
 		for (i = 0; i < mTda.length; i++) {
@@ -214,6 +215,12 @@ public class tracedump {
 				if (knownFrame == -1) {
 					if (knownMethod(data)) {
 						knownFrame = threadStack.size();
+						ignore = false;
+					} else {
+						if (ignoreMethod(data)) {
+							knownFrame = threadStack.size();
+							ignore = true;
+						}
 					}
 				}
 			} else {
@@ -225,16 +232,16 @@ public class tracedump {
 
 			if (threadStack.size() <= stackLimit) {
 				String name = data.getClassName() + '.' + data.getMethodName();
-				if (knownFrame == -1 || knownFrame == threadStack.size()) {
-					if (!ignoreMethod(data)) {
-						for (i = 0; i < threadStack.size(); i++) {
-							System.out.print("  ");
-						}
-						System.out.println(name + "          ::"
-								+ +block.getStartTime() + "::"
-								+ block.getEndTime() + "::"
-								+ threadStack.size() + "::" + row.getName());
+				if (knownFrame == -1
+						|| (knownFrame == threadStack.size() && !ignore)) {
+
+					for (i = 0; i < threadStack.size(); i++) {
+						System.out.print("  ");
 					}
+					System.out.println(name + "          ::"
+							+ +block.getStartTime() + "::" + block.getEndTime()
+							+ "::" + threadStack.size() + "::" + row.getName());
+
 				}
 			}
 			if (contextSwitch) {

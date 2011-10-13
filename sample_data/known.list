@@ -1,0 +1,2 @@
+android/os/Binder.execTransact
+org/apache/harmony/dalvik/ddmc/DdmServer.dispatch
