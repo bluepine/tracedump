@@ -170,18 +170,18 @@ public class tracedump {
 		if (mTraceRecordList == null) {
 			return false;
 		}
-		int knownFrame = -1;
+		HashMap<Integer, Integer> knownFrame = new HashMap<Integer, Integer>(mTda.length);
 		int maxStackLevel = 0;
 		HashMap<Integer, Stack<StackFrame>> threadStackMap = null;
 		Stack<StackFrame> threadStack = null;
 		Long endtime, startTime;
 		int i;
 		boolean contextSwitch;
-		boolean ignore = false;
 		// TODO Auto-generated method stub
 		threadStackMap = new HashMap<Integer, Stack<StackFrame>>(mTda.length);
 		for (i = 0; i < mTda.length; i++) {
 			threadStackMap.put(mTda[i].getId(), new Stack<StackFrame>());
+			knownFrame.put(mTda[i].getId(), -1);
 		}
 		for (TimeLineView.Record record : mTraceRecordList) {
 			TimeLineView.Block block = record.block;
@@ -193,8 +193,8 @@ public class tracedump {
 			while (!threadStack.empty()) {
 				if (threadStack.peek().endtime <= startTime) {
 					// a function call returned
-					if (threadStack.size() == knownFrame) {
-						knownFrame = -1;
+					if (threadStack.size() == knownFrame.get(row.getId())) {
+						knownFrame.put(row.getId(), -1);
 					}
 					threadStack.pop();
 				} else {
@@ -212,15 +212,9 @@ public class tracedump {
 				frame.endtime = endtime;
 				contextSwitch = false;
 				threadStack.push(frame);
-				if (knownFrame == -1) {
+				if (knownFrame.get(row.getId()) == -1) {
 					if (knownMethod(data)) {
-						knownFrame = threadStack.size();
-						ignore = false;
-					} else {
-						if (ignoreMethod(data)) {
-							knownFrame = threadStack.size();
-							ignore = true;
-						}
+						knownFrame.put(row.getId(), threadStack.size());
 					}
 				}
 			} else {
@@ -232,16 +226,16 @@ public class tracedump {
 
 			if (threadStack.size() <= stackLimit) {
 				String name = data.getClassName() + '.' + data.getMethodName();
-				if (knownFrame == -1
-						|| (knownFrame == threadStack.size() && !ignore)) {
-
-					for (i = 0; i < threadStack.size(); i++) {
-						System.out.print("  ");
+				if (knownFrame.get(row.getId())== -1 || knownFrame.get(row.getId()) == threadStack.size()) {
+					if (!ignoreMethod(data)) {
+						for (i = 0; i < threadStack.size(); i++) {
+							System.out.print("  ");
+						}
+						System.out.println(name + "          ::"
+								+ +block.getStartTime() + "::"
+								+ block.getEndTime() + "::"
+								+ threadStack.size() + "::" + row.getName());
 					}
-					System.out.println(name + "          ::"
-							+ +block.getStartTime() + "::" + block.getEndTime()
-							+ "::" + threadStack.size() + "::" + row.getName());
-
 				}
 			}
 			if (contextSwitch) {
